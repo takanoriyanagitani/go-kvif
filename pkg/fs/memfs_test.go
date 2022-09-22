@@ -2,6 +2,7 @@ package kvfs
 
 import (
 	"bytes"
+	"io"
 	"io/fs"
 	"testing"
 )
@@ -52,6 +53,30 @@ func TestMemFs(t *testing.T) {
 
 			var isNoent bool = IsNotFound(e)
 			t.Run("Must be noent", check(isNoent, true))
+		})
+
+		t.Run("single empty file", func(t *testing.T) {
+			t.Parallel()
+
+			var mf MemFs = MemFsNew()
+			var mb MemFileBuilder = MemFileBuilderDefault
+			f, e := mb.
+				WithName("file.txt").
+				WithReader(bytes.NewReader(nil)).
+				Build()
+			t.Run("mem file built", check(nil == e, true))
+
+			e = mf.Upsert("path/to/file.txt", f)
+			t.Run("mem file upserted", check(nil == e, true))
+
+			ff, e := mf.Open("path/to/file.txt")
+			t.Run("fs file got", check(nil == e, true))
+			defer ff.Close()
+
+			b, e := io.ReadAll(ff)
+			t.Run("fs file read", check(nil == e, true))
+
+			t.Run("fs file content empty", check(len(b), 0))
 		})
 	})
 }
