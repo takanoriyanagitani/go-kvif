@@ -4,6 +4,7 @@ import (
 	"context"
 
 	ki "github.com/takanoriyanagitani/go-kvif"
+	kf "github.com/takanoriyanagitani/go-kvif/pkg/fs"
 )
 
 type ArcGet func(ctx context.Context, key ArcKey) (ki.Val, error)
@@ -76,3 +77,5 @@ func (b ArcKvBuilder) Build() (a ArcKv, e error) {
 }
 
 var ArcKvBuilderDefault ArcKvBuilder = ArcKvBuilder{}.Default()
+
+type RasKvBuilder func(kf.ReaderAtSized) (ArcKv, error)

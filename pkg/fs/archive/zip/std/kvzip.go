@@ -3,24 +3,24 @@ package kvzip
 import (
 	"archive/zip"
 	"context"
-	"io"
 	"io/fs"
 
 	ki "github.com/takanoriyanagitani/go-kvif"
+	kf "github.com/takanoriyanagitani/go-kvif/pkg/fs"
 	ka "github.com/takanoriyanagitani/go-kvif/pkg/fs/archive"
 )
+
+func ras2rdr(ras kf.ReaderAtSized) (*zip.Reader, error) {
+	return zip.NewReader(ras.ReaderAt(), ras.Size())
+}
 
 func reader2file(r *zip.Reader) func(name string) (fs.File, error) {
 	return r.Open
 }
 
-type Reader2Bytes func(r io.Reader) ([]byte, error)
+type name2Bytes func(r *zip.Reader) func(name string) ([]byte, error)
 
-var UnlimitedRead2Bytes Reader2Bytes = io.ReadAll
-
-type Name2Bytes func(r *zip.Reader) func(name string) ([]byte, error)
-
-func Name2BytesBuilderNew(r2b Reader2Bytes) Name2Bytes {
+func name2BytesBuilderNew(r2b ki.Reader2Bytes) name2Bytes {
 	return func(r *zip.Reader) func(name string) ([]byte, error) {
 		return func(name string) ([]byte, error) {
 			f, e := reader2file(r)(name)
@@ -34,9 +34,7 @@ func Name2BytesBuilderNew(r2b Reader2Bytes) Name2Bytes {
 	}
 }
 
-var UnlimitedName2Bytes Name2Bytes = Name2BytesBuilderNew(UnlimitedRead2Bytes)
-
-func ArcGetBuilderNew(n2b Name2Bytes) func(*zip.Reader) ka.ArcGet {
+func arcGetBuilderNew(n2b name2Bytes) func(*zip.Reader) ka.ArcGet {
 	return func(zr *zip.Reader) ka.ArcGet {
 		return func(_ctx context.Context, key ka.ArcKey) (ki.Val, error) {
 			var validFilename string = key.ToFilename()
@@ -48,12 +46,12 @@ func ArcGetBuilderNew(n2b Name2Bytes) func(*zip.Reader) ka.ArcGet {
 	}
 }
 
-type ZipKvBuilder func(*zip.Reader) (ka.ArcKv, error)
+type zipKvBuilder func(*zip.Reader) (ka.ArcKv, error)
 
-func ZipKvBuilderNew(bld ka.ArcKvBuilder) func(Name2Bytes) ZipKvBuilder {
-	return func(n2b Name2Bytes) ZipKvBuilder {
+func zipKvBuilderNew(bld ka.ArcKvBuilder) func(name2Bytes) zipKvBuilder {
+	return func(n2b name2Bytes) zipKvBuilder {
 		return func(zr *zip.Reader) (k ka.ArcKv, e error) {
-			var g ka.ArcGet = ArcGetBuilderNew(n2b)(zr)
+			var g ka.ArcGet = arcGetBuilderNew(n2b)(zr)
 			var c ka.ArcCls = func() error { return nil } // nothing to close
 			return bld.
 				WithGet(g).
@@ -63,4 +61,19 @@ func ZipKvBuilderNew(bld ka.ArcKvBuilder) func(Name2Bytes) ZipKvBuilder {
 	}
 }
 
-var ZipKvBuilderDefault ZipKvBuilder = ZipKvBuilderNew(ka.ArcKvBuilderDefault)(UnlimitedName2Bytes)
+func ZipKvBuilderNew(bld ka.ArcKvBuilder) func(ki.Reader2Bytes) ka.RasKvBuilder {
+	return func(r2b ki.Reader2Bytes) ka.RasKvBuilder {
+		var n2b name2Bytes = name2BytesBuilderNew(r2b)
+		var zkb zipKvBuilder = zipKvBuilderNew(bld)(n2b)
+		return ki.ComposeErr(
+			ras2rdr,
+			zkb,
+		)
+	}
+}
+
+var ZipKvBuilderDefault func(ki.Reader2Bytes) ka.RasKvBuilder = ZipKvBuilderNew(
+	ka.ArcKvBuilderDefault,
+)
+
+var ZipKvBuilderDefaultUnlimited ka.RasKvBuilder = ZipKvBuilderDefault(ki.UnlimitedRead2Bytes)
