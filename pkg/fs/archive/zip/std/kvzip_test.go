@@ -30,6 +30,10 @@ func check[T comparable](got, expected T) func(*testing.T) {
 	)(got, expected)
 }
 
+var checkBytes func(got, expected []byte) func(*testing.T) = checkBuilder(
+	func(a, b []byte) (same bool) { return 0 == bytes.Compare(a, b) },
+)
+
 func TestAll(t *testing.T) {
 	t.Parallel()
 
@@ -104,6 +108,55 @@ func TestAll(t *testing.T) {
 					t.Run("Must not fail", check(nil == e, true))
 
 					t.Run("Must be empty", check(0, len(v.Raw())))
+				})
+
+				t.Run("many non empty items", func(t *testing.T) {
+					t.Parallel()
+
+					var zipbytes bytes.Buffer
+					var zw *zip.Writer = zip.NewWriter(&zipbytes)
+
+					createItem := func(name string, content []byte) {
+						zh := zip.FileHeader{
+							Name:   name,
+							Method: zip.Store,
+						}
+
+						w, e := zw.CreateHeader(&zh)
+						t.Run("zip item created", check(nil == e, true))
+						_, e = w.Write(content)
+						t.Run("zip item wrote", check(nil == e, true))
+					}
+
+					createItem("test1.txt", []byte("hw"))
+					createItem("test2.txt", []byte("hh"))
+
+					e := zw.Close()
+					t.Run("zip created", check(nil == e, true))
+
+					var ras kf.ReaderAtSized = kf.ReaderAtSizedFromBytes(zipbytes.Bytes())
+
+					a, e := rkb(ras)
+					t.Run("Must not fail(valid empty zip)", check(nil == e, true))
+					defer a.Close()
+
+					_, e = a.Get(context.Background(), ki.KeyNew("", []byte("hw.txt")))
+					t.Run("Must fail(no such item)", check(nil != e, true))
+
+					var isNoent bool = kf.IsNotFound(e)
+					t.Run("Must be noent", check(isNoent, true))
+
+					chk := func(name string, expected []byte) func(*testing.T) {
+						return func(t *testing.T) {
+							v, e := a.Get(context.Background(), ki.KeyNew("", []byte(name)))
+							t.Run("Must not fail", check(nil == e, true))
+
+							t.Run("Must be same", checkBytes(v.Raw(), expected))
+						}
+					}
+
+					t.Run("test1", chk("test1.txt", []byte("hw")))
+					t.Run("test2", chk("test2.txt", []byte("hh")))
 				})
 			}
 		}(ZipKvBuilderDefaultUnlimited))
