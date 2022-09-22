@@ -10,6 +10,8 @@ import (
 	ki "github.com/takanoriyanagitani/go-kvif"
 )
 
+var TimeEpoch time.Time = time.Unix(0, 0)
+
 type MemFile struct {
 	data     *bytes.Reader
 	fileinfo fs.FileInfo
@@ -34,6 +36,12 @@ func (m MemFile) ToSized() ReaderAtSized {
 		sz: m.Size(),
 	}
 }
+
+type TimeProvider func() time.Time
+
+func TimeProviderConstNew(ct time.Time) TimeProvider { return func() time.Time { return ct } }
+
+var TimeProviderEpoch TimeProvider = TimeProviderConstNew(TimeEpoch)
 
 type MemFileBuilder struct {
 	Name     string
