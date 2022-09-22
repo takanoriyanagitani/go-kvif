@@ -79,3 +79,7 @@ var ArcKeyValidatorPath ArcKeyValidator = func(k ki.Key) (ki.Key, error) {
 }
 
 var ArcKeyValidatorDefault ArcKeyValidator = ArcKeyValidatorPath.Append(ArcKeyValidatorRegexpSimple)
+
+var ArcKeyConverterDefault ArcKeyConverter = ArcKeyConverterBuilderNew(ArcKeyValidatorDefault)
+
+var ArcKeyBuilderDefault ArcKeyBuilder = ArcKeyBuilderNew(ArcKeyConverterDefault)
