@@ -74,3 +74,5 @@ func (b ArcKvBuilder) Build() (a ArcKv, e error) {
 		},
 	)
 }
+
+var ArcKvBuilderDefault ArcKvBuilder = ArcKvBuilder{}.Default()

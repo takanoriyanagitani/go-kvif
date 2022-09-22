@@ -47,3 +47,20 @@ func ArcGetBuilderNew(n2b Name2Bytes) func(*zip.Reader) ka.ArcGet {
 		}
 	}
 }
+
+type ZipKvBuilder func(*zip.Reader) (ka.ArcKv, error)
+
+func ZipKvBuilderNew(bld ka.ArcKvBuilder) func(Name2Bytes) ZipKvBuilder {
+	return func(n2b Name2Bytes) ZipKvBuilder {
+		return func(zr *zip.Reader) (k ka.ArcKv, e error) {
+			var g ka.ArcGet = ArcGetBuilderNew(n2b)(zr)
+			var c ka.ArcCls = func() error { return nil } // nothing to close
+			return bld.
+				WithGet(g).
+				WithClose(c).
+				Build()
+		}
+	}
+}
+
+var ZipKvBuilderDefault ZipKvBuilder = ZipKvBuilderNew(ka.ArcKvBuilderDefault)(UnlimitedName2Bytes)
