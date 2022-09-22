@@ -94,7 +94,7 @@ func (a ArcBucket) ToMemFile(f fs.FS, b kf.MemFileBuilder) (m kf.MemFile, e erro
 	if nil != e {
 		return m, e
 	}
-	defer file.Close()
+	defer file.Close() // Reading file -> ignore close error
 
 	s, e := file.Stat()
 	if nil != e {

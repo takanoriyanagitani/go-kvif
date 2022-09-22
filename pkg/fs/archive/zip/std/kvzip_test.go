@@ -66,6 +66,44 @@ func TestAll(t *testing.T) {
 
 					_, e = a.Get(context.Background(), ki.KeyNew("", []byte("hw.txt")))
 					t.Run("Must fail(empty zip)", check(nil != e, true))
+
+					var isNoent bool = kf.IsNotFound(e)
+					t.Run("Must be noent", check(isNoent, true))
+				})
+
+				t.Run("single empty archive item", func(t *testing.T) {
+					t.Parallel()
+
+					var zipbytes bytes.Buffer
+					var zw *zip.Writer = zip.NewWriter(&zipbytes)
+
+					zh := zip.FileHeader{
+						Name:   "empty.txt",
+						Method: zip.Store,
+					}
+
+					_, e := zw.CreateHeader(&zh)
+					t.Run("zip item created", check(nil == e, true))
+
+					e = zw.Close()
+					t.Run("zip created", check(nil == e, true))
+
+					var ras kf.ReaderAtSized = kf.ReaderAtSizedFromBytes(zipbytes.Bytes())
+
+					a, e := rkb(ras)
+					t.Run("Must not fail(valid empty zip)", check(nil == e, true))
+					defer a.Close()
+
+					_, e = a.Get(context.Background(), ki.KeyNew("", []byte("hw.txt")))
+					t.Run("Must fail(no such item)", check(nil != e, true))
+
+					var isNoent bool = kf.IsNotFound(e)
+					t.Run("Must be noent", check(isNoent, true))
+
+					v, e := a.Get(context.Background(), ki.KeyNew("", []byte("empty.txt")))
+					t.Run("Must not fail", check(nil == e, true))
+
+					t.Run("Must be empty", check(0, len(v.Raw())))
 				})
 			}
 		}(ZipKvBuilderDefaultUnlimited))

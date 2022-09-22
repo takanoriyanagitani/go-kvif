@@ -7,3 +7,5 @@ type Val struct {
 func ValNew(raw []byte) Val {
 	return Val{raw}
 }
+
+func (v Val) Raw() []byte { return v.raw }
