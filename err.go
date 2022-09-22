@@ -35,5 +35,6 @@ func ErrorOrElse(e error, ef func() error) error {
 }
 
 func Error1st(ef []func() error) error {
-	return ArrReduce(ef, nil, ErrorOrElse)
+	var ie Iter[func() error] = IterFromArr(ef)
+	return IterReduce(ie, nil, ErrorOrElse)
 }

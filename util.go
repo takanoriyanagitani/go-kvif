@@ -19,3 +19,5 @@ func CurryCtx[T, U any](f func(context.Context, T) (U, error)) func(context.Cont
 		}
 	}
 }
+
+func Identity[T any](t T) T { return t }

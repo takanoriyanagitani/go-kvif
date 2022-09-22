@@ -20,6 +20,8 @@ type ArcKey struct {
 
 type ArcKeyBuilder func(ki.Key) (ArcKey, error)
 
+func (k ArcKey) ToFilename() string { return k.validFilename }
+
 func valid2akey(validFilename string) ArcKey {
 	return ArcKey{validFilename}
 }
@@ -30,8 +32,6 @@ func ArcKeyBuilderNew(conv ArcKeyConverter) ArcKeyBuilder {
 		ki.ErrorFuncCreate(valid2akey), // string => (ArcKey, error)
 	)
 }
-
-func (k ArcKey) ToFilename() string { return k.validFilename }
 
 type ArcKeyConverter func(ki.Key) (validKey string, e error)
 
