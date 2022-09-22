@@ -52,6 +52,12 @@ func (m MemFileBuilder) build(b []byte) MemFile {
 	}
 }
 
+var MemFileBuilderDefault = MemFileBuilder{}.Default()
+
+// Default creates MemFileBuilder with default settings.
+//
+// - ToBytes: UnlimitedRead2Bytes
+// - Mib:     MemInfoBuilderDefault
 func (m MemFileBuilder) Default() MemFileBuilder {
 	m.ToBytes = ki.UnlimitedRead2Bytes
 	m.Mib = MemInfoBuilderDefault
