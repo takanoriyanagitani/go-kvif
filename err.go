@@ -39,14 +39,14 @@ func Error1st(ef []func() error) error {
 	return IterReduce(ie, nil, ErrorOrElse)
 }
 
-func ErrorFlatMap[T,U any](t T, te error, f func(T)(U, error))(u U, e error){
+func ErrorFlatMap[T, U any](t T, te error, f func(T) (U, error)) (u U, e error) {
 	if nil != te {
 		return u, te
 	}
 	return f(t)
 }
 
-func ErrorMap[T,U any](t T, te error, f func(T) U)(u U, e error){
+func ErrorMap[T, U any](t T, te error, f func(T) U) (u U, e error) {
 	return ErrorFlatMap(
 		t,
 		te,

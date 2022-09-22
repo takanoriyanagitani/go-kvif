@@ -1,7 +1,9 @@
 package kvif
 
 type Key struct {
-	raw []byte
+	bucket string
+	raw    []byte
 }
 
-func (k Key) Raw() []byte { return k.raw }
+func (k Key) Bucket() string { return k.bucket }
+func (k Key) Raw() []byte    { return k.raw }
