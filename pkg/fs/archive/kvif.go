@@ -2,6 +2,7 @@ package kvarc
 
 import (
 	"context"
+	"fmt"
 
 	ki "github.com/takanoriyanagitani/go-kvif"
 	kf "github.com/takanoriyanagitani/go-kvif/pkg/fs"
@@ -71,7 +72,7 @@ func (b ArcKvBuilder) Build() (a ArcKv, e error) {
 			}, nil
 		},
 		func() error {
-			return nil
+			return fmt.Errorf("Invalid builder")
 		},
 	)
 }
