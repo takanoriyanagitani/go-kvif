@@ -23,7 +23,7 @@ var noentryErr func(path string) *fs.PathError = openErr(fs.ErrNotExist)
 
 func getValidName(unchecked string) (validFilename string, e error) {
 	return ki.ErrorFromBool(
-		fs.ValidPath(validFilename),
+		fs.ValidPath(unchecked),
 		func() (string, error) { return unchecked, nil },
 		func() error { return invalidErr(unchecked) },
 	)
@@ -31,6 +31,12 @@ func getValidName(unchecked string) (validFilename string, e error) {
 
 type MemFs struct {
 	filemap map[string]fs.File
+}
+
+func MemFsNew() MemFs {
+	return MemFs{
+		filemap: make(map[string]fs.File),
+	}
 }
 
 func (m MemFs) open(validFilename string) (fs.File, error) {
