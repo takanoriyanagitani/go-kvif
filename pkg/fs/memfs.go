@@ -22,7 +22,7 @@ var invalidErr func(path string) *fs.PathError = openErr(fs.ErrInvalid)
 var noentryErr func(path string) *fs.PathError = openErr(fs.ErrNotExist)
 
 func getValidName(unchecked string) (validFilename string, e error) {
-	return ki.Bool2Err(
+	return ki.ErrorFromBool(
 		fs.ValidPath(validFilename),
 		func() (string, error) { return unchecked, nil },
 		func() error { return invalidErr(unchecked) },
