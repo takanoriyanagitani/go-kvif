@@ -1,10 +1,10 @@
 package kvif
 
-type Iter[T any] func() (o T, empty bool)
+type Iter[T any] func() (o T, hasValue bool)
 
 func IterReduce[T, U any](i Iter[T], init U, reducer func(state U, item T) U) U {
 	var state U = init
-	for o, empty := i(); !empty; o, empty = i() {
+	for o, hasValue := i(); hasValue; o, hasValue = i() {
 		var t T = o
 		state = reducer(state, t)
 	}
@@ -13,13 +13,13 @@ func IterReduce[T, U any](i Iter[T], init U, reducer func(state U, item T) U) U 
 
 func IterFromArr[T any](a []T) Iter[T] {
 	var ix int = 0
-	return func() (o T, empty bool) {
+	return func() (o T, hasValue bool) {
 		if ix < len(a) {
 			var t T = a[ix]
 			ix += 1
-			return t, false
+			return t, OptHasValue
 		}
-		return o, true
+		return o, OptEmpty
 	}
 }
 
@@ -27,4 +27,19 @@ func (i Iter[T]) All(f func(T) bool) bool {
 	return IterReduce(i, true, func(state bool, item T) bool {
 		return state && f(item)
 	})
+}
+
+func IterMap[T, U any](i Iter[T], f func(T) U) Iter[U] {
+	return func() (u U, hasValue bool) {
+		t, hasValue := i()
+		return OptMap(t, hasValue, f)
+	}
+}
+
+func (i Iter[T]) Reduce(init T, reducer func(state T, item T) T) T {
+	return IterReduce(i, init, reducer)
+}
+
+func (i Iter[T]) Map(f func(T) T) Iter[T] {
+	return IterMap(i, f)
 }

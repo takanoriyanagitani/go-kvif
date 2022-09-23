@@ -22,6 +22,10 @@ type ArcKeyBuilder func(ki.Key) (ArcKey, error)
 
 func (k ArcKey) ToFilename() string { return k.validFilename }
 
+func (k ArcKey) ToKey(bucket string) ki.Key {
+	return ki.KeyNew(bucket, []byte(k.validFilename))
+}
+
 func valid2akey(validFilename string) ArcKey {
 	return ArcKey{validFilename}
 }
