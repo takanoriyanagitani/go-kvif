@@ -12,6 +12,8 @@ import (
 
 var TimeEpoch time.Time = time.Unix(0, 0)
 
+// MemFile implements fs.File.
+// Close method is no-op.
 type MemFile struct {
 	data     *bytes.Reader
 	fileinfo fs.FileInfo
