@@ -3,6 +3,7 @@ package kvarc
 import (
 	"context"
 	"fmt"
+	"io/fs"
 
 	ki "github.com/takanoriyanagitani/go-kvif"
 	kf "github.com/takanoriyanagitani/go-kvif/pkg/fs"
@@ -10,12 +11,15 @@ import (
 
 type ArcGet func(ctx context.Context, key ArcKey) (ki.Val, error)
 
+type ArcLst func(ctx context.Context) (keys ki.Iter[ArcKey], err error)
+
 type ArcCls func() error
 
 type ArcKv struct {
 	get ArcGet
 	bld ArcKeyBuilder
 	cls ArcCls
+	lst ArcLst
 }
 
 func (a ArcKv) Get(ctx context.Context, key ki.Key) (v ki.Val, e error) {
@@ -25,6 +29,10 @@ func (a ArcKv) Get(ctx context.Context, key ki.Key) (v ki.Val, e error) {
 		a.bld,
 		g,
 	)(key)
+}
+
+func (a ArcKv) Lst(ctx context.Context) (keys ki.Iter[ki.Key], err error) {
+	return nil, nil
 }
 
 func (a ArcKv) Close() error { return a.cls() }
@@ -80,3 +88,15 @@ func (b ArcKvBuilder) Build() (a ArcKv, e error) {
 var ArcKvBuilderDefault ArcKvBuilder = ArcKvBuilder{}.Default()
 
 type RasKvBuilder func(kf.ReaderAtSized) (ArcKv, error)
+
+type ArcKvFactory struct {
+	vfs fs.FS
+	mfb kf.MemFileBuilder
+}
+
+func (f ArcKvFactory) NewKvBuilder(kb RasKvBuilder) func(ArcBucket) (ArcKv, error) {
+	return ki.ComposeErr(
+		func(ab ArcBucket) (kf.MemFile, error) { return ab.ToMemFile(f.vfs, f.mfb) },
+		func(mf kf.MemFile) (ArcKv, error) { return kb(mf.ToSized()) },
+	)
+}
