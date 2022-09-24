@@ -8,9 +8,9 @@ import (
 	ka "github.com/takanoriyanagitani/go-kvif/pkg/fs/archive"
 )
 
-type lstBuilder func(r *zip.Reader) func(context.Context) (ki.Iter[ka.ArcKey], error)
+type lstBuilder func(r *zip.Reader) ka.ArcLst
 
-var lstBldNew lstBuilder = func(r *zip.Reader) func(context.Context) (ki.Iter[ka.ArcKey], error) {
+var lstBldNew lstBuilder = func(r *zip.Reader) ka.ArcLst {
 	return func(_ context.Context) (keys ki.Iter[ka.ArcKey], err error) {
 		var ik ki.Iter[ka.ArcKey] = ki.Compose(
 			reader2files,
