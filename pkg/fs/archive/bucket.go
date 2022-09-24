@@ -23,6 +23,7 @@ type ArcBucket struct {
 type ArcBucketBuilder func(ki.Key) (ArcBucket, error)
 
 func (b ArcBucket) ToFilename() string { return b.validFilename }
+func (b ArcBucket) hasValue() bool     { return 0 < len(b.validFilename) }
 
 type ArcBucketConverter func(ki.Key) (validFilename string, e error)
 

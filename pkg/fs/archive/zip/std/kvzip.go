@@ -48,32 +48,42 @@ func arcGetBuilderNew(n2b name2Bytes) func(*zip.Reader) ka.ArcGet {
 
 type zipKvBuilder func(*zip.Reader) (ka.ArcKv, error)
 
-func zipKvBuilderNew(bld ka.ArcKvBuilder) func(name2Bytes) zipKvBuilder {
-	return func(n2b name2Bytes) zipKvBuilder {
-		return func(zr *zip.Reader) (k ka.ArcKv, e error) {
-			var g ka.ArcGet = arcGetBuilderNew(n2b)(zr)
-			var c ka.ArcCls = func() error { return nil } // nothing to close
-			return bld.
-				WithGet(g).
-				WithClose(c).
-				Build()
+func zipKvBuilderNew(bld ka.ArcKvBuilder) func(name2Bytes) func(ka.ArcBucket) zipKvBuilder {
+	return func(n2b name2Bytes) func(ka.ArcBucket) zipKvBuilder {
+		return func(ab ka.ArcBucket) zipKvBuilder {
+			return func(zr *zip.Reader) (k ka.ArcKv, e error) {
+				var g ka.ArcGet = arcGetBuilderNew(n2b)(zr)
+				var c ka.ArcCls = func() error { return nil } // nothing to close
+				// TODO implement lst
+				l := func(context.Context) (ki.Iter[ka.ArcKey], error) { return nil, nil }
+				return bld.
+					WithBucket(ab).
+					WithLst(l).
+					WithGet(g).
+					WithClose(c).
+					Build()
+			}
 		}
 	}
 }
 
-func ZipKvBuilderNew(bld ka.ArcKvBuilder) func(ki.Reader2Bytes) ka.RasKvBuilder {
-	return func(r2b ki.Reader2Bytes) ka.RasKvBuilder {
-		var n2b name2Bytes = name2BytesBuilderNew(r2b)
-		var zkb zipKvBuilder = zipKvBuilderNew(bld)(n2b)
-		return ki.ComposeErr(
-			ras2rdr,
-			zkb,
-		)
+func ZipKvBuilderNew(bld ka.ArcKvBuilder) func(ki.Reader2Bytes) func(ka.ArcBucket) ka.RasKvBuilder {
+	return func(r2b ki.Reader2Bytes) func(ka.ArcBucket) ka.RasKvBuilder {
+		return func(ab ka.ArcBucket) ka.RasKvBuilder {
+			var n2b name2Bytes = name2BytesBuilderNew(r2b)
+			var zkb zipKvBuilder = zipKvBuilderNew(bld)(n2b)(ab)
+			return ki.ComposeErr(
+				ras2rdr,
+				zkb,
+			)
+		}
 	}
 }
 
-var ZipKvBuilderDefault func(ki.Reader2Bytes) ka.RasKvBuilder = ZipKvBuilderNew(
+var ZipKvBuilderDefault func(ki.Reader2Bytes) func(ka.ArcBucket) ka.RasKvBuilder = ZipKvBuilderNew(
 	ka.ArcKvBuilderDefault,
 )
 
-var ZipKvBuilderDefaultUnlimited ka.RasKvBuilder = ZipKvBuilderDefault(ki.UnlimitedRead2Bytes)
+var ZipKvBuilderDefaultUnlimited func(ka.ArcBucket) ka.RasKvBuilder = ZipKvBuilderDefault(
+	ki.UnlimitedRead2Bytes,
+)

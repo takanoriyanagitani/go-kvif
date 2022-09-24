@@ -40,6 +40,9 @@ func TestAll(t *testing.T) {
 	t.Run("ZipKvBuilderDefaultUnlimited", func(t *testing.T) {
 		t.Parallel()
 
+		ab, e := ka.ArcBucketBuilderDefault(ki.KeyNew("archive.zip", []byte("empty.txt")))
+		t.Run("bucket got", check(nil == e, true))
+
 		t.Run("ras2kv got", func(rkb ka.RasKvBuilder) func(*testing.T) {
 			return func(t *testing.T) {
 				t.Parallel()
@@ -159,6 +162,6 @@ func TestAll(t *testing.T) {
 					t.Run("test2", chk("test2.txt", []byte("hh")))
 				})
 			}
-		}(ZipKvBuilderDefaultUnlimited))
+		}(ZipKvBuilderDefaultUnlimited(ab)))
 	})
 }

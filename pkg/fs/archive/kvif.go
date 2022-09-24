@@ -48,6 +48,8 @@ type ArcKvBuilder struct {
 	ArcGet
 	ArcKeyBuilder
 	ArcCls
+	ArcLst
+	ArcBucket
 }
 
 func (b ArcKvBuilder) Default() ArcKvBuilder {
@@ -70,11 +72,23 @@ func (b ArcKvBuilder) WithClose(c ArcCls) ArcKvBuilder {
 	return b
 }
 
+func (b ArcKvBuilder) WithLst(l ArcLst) ArcKvBuilder {
+	b.ArcLst = l
+	return b
+}
+
+func (b ArcKvBuilder) WithBucket(ab ArcBucket) ArcKvBuilder {
+	b.ArcBucket = ab
+	return b
+}
+
 func (b ArcKvBuilder) Build() (a ArcKv, e error) {
 	var valid bool = ki.IterFromArr([]bool{
 		nil != b.ArcGet,
 		nil != b.ArcKeyBuilder,
 		nil != b.ArcCls,
+		nil != b.ArcLst,
+		b.ArcBucket.hasValue(),
 	}).All(ki.Identity[bool])
 
 	return ki.ErrorFromBool(
@@ -84,6 +98,7 @@ func (b ArcKvBuilder) Build() (a ArcKv, e error) {
 				get: b.ArcGet,
 				bld: b.ArcKeyBuilder,
 				cls: b.ArcCls,
+				lst: b.ArcLst,
 			}, nil
 		},
 		func() error {

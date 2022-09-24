@@ -49,7 +49,15 @@ func TestAll(t *testing.T) {
 						t.Parallel()
 
 						var g ArcGet = MemArcGetBuilderNew(make(map[ArcKey]ki.Val))
+						var l ArcLst = func(context.Context) (ki.Iter[ArcKey], error) {
+							return nil, nil
+						}
+						b, e := ArcBucketBuilderDefault(ki.KeyNew("archive.zip", []byte("hw")))
+						t.Run("bucket built", check(nil == e, true))
+
 						ak, e := akb.WithGet(g).
+							WithLst(l).
+							WithBucket(b).
 							WithClose(func() error { return nil }).
 							Build()
 						t.Run("Must not fail(empty)", check(nil == e, true))
