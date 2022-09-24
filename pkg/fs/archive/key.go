@@ -18,6 +18,10 @@ type ArcKey struct {
 	validFilename string
 }
 
+func ArcKeyNew(validFilename string) ArcKey {
+	return ArcKey{validFilename}
+}
+
 type ArcKeyBuilder func(ki.Key) (ArcKey, error)
 
 func (k ArcKey) ToFilename() string { return k.validFilename }

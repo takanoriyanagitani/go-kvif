@@ -18,9 +18,39 @@ func reader2file(r *zip.Reader) func(name string) (fs.File, error) {
 	return r.Open
 }
 
-type name2Bytes func(r *zip.Reader) func(name string) ([]byte, error)
+type name2BytesBuilder func(r *zip.Reader) func(name string) ([]byte, error)
 
-func name2BytesBuilderNew(r2b ki.Reader2Bytes) name2Bytes {
+type lstBuilder func(r *zip.Reader) func(context.Context) (ki.Iter[ka.ArcKey], error)
+
+var lstBldNew lstBuilder = func(r *zip.Reader) func(context.Context) (ki.Iter[ka.ArcKey], error) {
+	return func(_ context.Context) (keys ki.Iter[ka.ArcKey], err error) {
+		var zfiles []*zip.File = reader2files(r)
+		var iz ki.Iter[*zip.File] = ki.IterFromArr(zfiles)
+		var ik ki.Iter[ka.ArcKey] = ki.IterMap(iz, file2key)
+		return ik, nil
+	}
+}
+
+type reader2keys func(*zip.Reader) ki.Iter[ka.ArcKey]
+
+func reader2files(r *zip.Reader) []*zip.File { return r.File }
+
+func file2hdr(f *zip.File) zip.FileHeader     { return f.FileHeader }
+func hdr2name(h zip.FileHeader) (name string) { return h.Name }
+
+var file2name func(f *zip.File) (name string) = ki.Compose(
+	file2hdr,
+	hdr2name,
+)
+
+var name2key func(validFilename string) ka.ArcKey = ka.ArcKeyNew
+
+var file2key func(f *zip.File) ka.ArcKey = ki.Compose(
+	file2name,
+	name2key,
+)
+
+func name2BytesBuilderNew(r2b ki.Reader2Bytes) name2BytesBuilder {
 	return func(r *zip.Reader) func(name string) ([]byte, error) {
 		return func(name string) ([]byte, error) {
 			f, e := reader2file(r)(name)
@@ -34,7 +64,7 @@ func name2BytesBuilderNew(r2b ki.Reader2Bytes) name2Bytes {
 	}
 }
 
-func arcGetBuilderNew(n2b name2Bytes) func(*zip.Reader) ka.ArcGet {
+func arcGetBuilderNew(n2b name2BytesBuilder) func(*zip.Reader) ka.ArcGet {
 	return func(zr *zip.Reader) ka.ArcGet {
 		return func(_ctx context.Context, key ka.ArcKey) (ki.Val, error) {
 			var validFilename string = key.ToFilename()
@@ -48,8 +78,8 @@ func arcGetBuilderNew(n2b name2Bytes) func(*zip.Reader) ka.ArcGet {
 
 type zipKvBuilder func(*zip.Reader) (ka.ArcKv, error)
 
-func zipKvBuilderNew(bld ka.ArcKvBuilder) func(name2Bytes) func(ka.ArcBucket) zipKvBuilder {
-	return func(n2b name2Bytes) func(ka.ArcBucket) zipKvBuilder {
+func zipKvBuilderNew(bld ka.ArcKvBuilder) func(name2BytesBuilder) func(ka.ArcBucket) zipKvBuilder {
+	return func(n2b name2BytesBuilder) func(ka.ArcBucket) zipKvBuilder {
 		return func(ab ka.ArcBucket) zipKvBuilder {
 			return func(zr *zip.Reader) (k ka.ArcKv, e error) {
 				var g ka.ArcGet = arcGetBuilderNew(n2b)(zr)
@@ -70,7 +100,7 @@ func zipKvBuilderNew(bld ka.ArcKvBuilder) func(name2Bytes) func(ka.ArcBucket) zi
 func ZipKvBuilderNew(bld ka.ArcKvBuilder) func(ki.Reader2Bytes) func(ka.ArcBucket) ka.RasKvBuilder {
 	return func(r2b ki.Reader2Bytes) func(ka.ArcBucket) ka.RasKvBuilder {
 		return func(ab ka.ArcBucket) ka.RasKvBuilder {
-			var n2b name2Bytes = name2BytesBuilderNew(r2b)
+			var n2b name2BytesBuilder = name2BytesBuilderNew(r2b)
 			var zkb zipKvBuilder = zipKvBuilderNew(bld)(n2b)(ab)
 			return ki.ComposeErr(
 				ras2rdr,
