@@ -37,10 +37,9 @@ func (a ArcKv) ArchiveName() string { return a.bkt.ToFilename() }
 func (a ArcKv) convertKey(ak ArcKey) ki.Key { return ak.ToKey(a.bkt) }
 
 func (a ArcKv) Lst(ctx context.Context) (keys ki.Iter[ki.Key], err error) {
-	ia2ik := func(ia ki.Iter[ArcKey]) ki.Iter[ki.Key] { return ki.IterMap(ia, a.convertKey) }
 	return ki.ComposeErr(
 		func(kv ArcKv) (ki.Iter[ArcKey], error) { return kv.lst(ctx) },
-		ki.ErrorFuncCreate(ia2ik),
+		ki.ErrorFuncCreate(ki.IterCompose(a.convertKey)),
 	)(a)
 }
 

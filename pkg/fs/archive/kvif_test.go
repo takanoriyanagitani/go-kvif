@@ -55,19 +55,22 @@ func TestAll(t *testing.T) {
 						b, e := ArcBucketBuilderDefault(ki.KeyNew("archive.zip", []byte("hw")))
 						t.Run("bucket built", check(nil == e, true))
 
-						ak, e := akb.WithGet(g).
+						akv, e := akb.WithGet(g).
 							WithLst(l).
 							WithBucket(b).
 							WithClose(func() error { return nil }).
 							Build()
 						t.Run("Must not fail(empty)", check(nil == e, true))
-						defer ak.Close()
+						defer akv.Close()
 
-						_, e = ak.Get(context.Background(), ki.KeyNew("", []byte("hw")))
+						_, e = akv.Get(context.Background(), ki.KeyNew("", []byte("hw")))
 						t.Run("Must fail(empty)", check(nil != e, true))
 
 						var isNoEnt bool = kf.IsNotFound(e)
 						t.Run("Must be noent", check(isNoEnt, true))
+
+						_, e = akv.Lst(context.Background())
+						t.Run("Must not fail(lst)", check(nil == e, true))
 					})
 
 					t.Run("getter missing", func(t *testing.T) {

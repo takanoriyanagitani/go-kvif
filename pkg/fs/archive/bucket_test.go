@@ -37,16 +37,18 @@ func TestBucket(t *testing.T) {
 					t.Parallel()
 
 					var s string = "path/to/archive.zip"
-					b, e := bldr(ki.KeyNew(s, nil))
+					bkt, e := bldr(ki.KeyNew(s, nil))
 					t.Run("Must not fail(valid bucket)", check(nil == e, true))
 
 					var mf fs.FS = kf.MemFsNew()
 
-					_, e = b.Open(mf)
+					_, e = bkt.Open(mf)
 					t.Run("Must fail(empty filesystem)", check(nil != e, true))
 
 					var isNoent bool = kf.IsNotFound(e)
 					t.Run("Must be noent", check(isNoent, true))
+
+					t.Run("Archive name", check(bkt.ToFilename(), s))
 				})
 
 				t.Run("ToMemFile", func(t *testing.T) {
