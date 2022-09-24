@@ -139,11 +139,11 @@ func TestAll(t *testing.T) {
 
 					var ras kf.ReaderAtSized = kf.ReaderAtSizedFromBytes(zipbytes.Bytes())
 
-					a, e := rkb(ras)
+					akv, e := rkb(ras)
 					t.Run("Must not fail(valid empty zip)", check(nil == e, true))
-					defer a.Close()
+					defer akv.Close()
 
-					_, e = a.Get(context.Background(), ki.KeyNew("", []byte("hw.txt")))
+					_, e = akv.Get(context.Background(), ki.KeyNew("", []byte("hw.txt")))
 					t.Run("Must fail(no such item)", check(nil != e, true))
 
 					var isNoent bool = kf.IsNotFound(e)
@@ -151,7 +151,7 @@ func TestAll(t *testing.T) {
 
 					chk := func(name string, expected []byte) func(*testing.T) {
 						return func(t *testing.T) {
-							v, e := a.Get(context.Background(), ki.KeyNew("", []byte(name)))
+							v, e := akv.Get(context.Background(), ki.KeyNew("", []byte(name)))
 							t.Run("Must not fail", check(nil == e, true))
 
 							t.Run("Must be same", checkBytes(v.Raw(), expected))
@@ -160,6 +160,24 @@ func TestAll(t *testing.T) {
 
 					t.Run("test1", chk("test1.txt", []byte("hw")))
 					t.Run("test2", chk("test2.txt", []byte("hh")))
+
+					t.Run("archive name", check(akv.ArchiveName(), "archive.zip"))
+
+					t.Run("Lst", func(t *testing.T) {
+						keys, e := akv.Lst(context.Background())
+						t.Run("Must not fail(get keys)", check(nil == e, true))
+
+						var ka []ki.Key = keys.ToArray()
+						t.Run("2 files", check(len(ka), 2))
+
+						var k1 ki.Key = ka[0]
+						var k2 ki.Key = ka[1]
+						t.Run("bucket", check(k1.Bucket(), "archive.zip"))
+						t.Run("bucket", check(k2.Bucket(), "archive.zip"))
+
+						t.Run("test1", checkBytes(k1.Raw(), []byte("test1.txt")))
+						t.Run("test2", checkBytes(k2.Raw(), []byte("test2.txt")))
+					})
 				})
 			}
 		}(ZipKvBuilderDefaultUnlimited(ab)))

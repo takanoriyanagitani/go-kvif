@@ -32,6 +32,8 @@ func (a ArcKv) Get(ctx context.Context, key ki.Key) (v ki.Val, e error) {
 	)(key)
 }
 
+func (a ArcKv) ArchiveName() string { return a.bkt.ToFilename() }
+
 func (a ArcKv) convertKey(ak ArcKey) ki.Key { return ak.ToKey(a.bkt) }
 
 func (a ArcKv) Lst(ctx context.Context) (keys ki.Iter[ki.Key], err error) {
@@ -99,6 +101,7 @@ func (b ArcKvBuilder) Build() (a ArcKv, e error) {
 				bld: b.ArcKeyBuilder,
 				cls: b.ArcCls,
 				lst: b.ArcLst,
+				bkt: b.ArcBucket,
 			}, nil
 		},
 		func() error {

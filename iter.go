@@ -44,6 +44,12 @@ func (i Iter[T]) Map(f func(T) T) Iter[T] {
 	return IterMap(i, f)
 }
 
+func (i Iter[T]) ToArray() []T {
+	return IterReduce(i, nil, func(state []T, t T) []T {
+		return append(state, t)
+	})
+}
+
 func IterCompose[T, U any](f func(T) U) func(Iter[T]) Iter[U] {
 	return func(it Iter[T]) Iter[U] {
 		return func() (u U, hasValue bool) {
