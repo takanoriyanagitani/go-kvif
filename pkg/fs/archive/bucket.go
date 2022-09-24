@@ -22,6 +22,8 @@ type ArcBucket struct {
 
 type ArcBucketBuilder func(ki.Key) (ArcBucket, error)
 
+func (b ArcBucket) ToFilename() string { return b.validFilename }
+
 type ArcBucketConverter func(ki.Key) (validFilename string, e error)
 
 type ArcBucketValidator func(ki.Key) (ki.Key, error)
