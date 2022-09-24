@@ -2,7 +2,6 @@ package kvzip
 
 import (
 	"archive/zip"
-	"context"
 
 	ki "github.com/takanoriyanagitani/go-kvif"
 	kf "github.com/takanoriyanagitani/go-kvif/pkg/fs"
@@ -21,8 +20,7 @@ func zipKvBuilderNew(bld ka.ArcKvBuilder) func(name2BytesBuilder) func(ka.ArcBuc
 			return func(zr *zip.Reader) (k ka.ArcKv, e error) {
 				var g ka.ArcGet = arcGetBuilderNew(n2b)(zr)
 				var c ka.ArcCls = func() error { return nil } // nothing to close
-				// TODO implement lst
-				l := func(context.Context) (ki.Iter[ka.ArcKey], error) { return nil, nil }
+				var l ka.ArcLst = lstBldNew(zr)
 				return bld.
 					WithBucket(ab).
 					WithLst(l).
