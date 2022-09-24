@@ -24,16 +24,17 @@ type lstBuilder func(r *zip.Reader) func(context.Context) (ki.Iter[ka.ArcKey], e
 
 var lstBldNew lstBuilder = func(r *zip.Reader) func(context.Context) (ki.Iter[ka.ArcKey], error) {
 	return func(_ context.Context) (keys ki.Iter[ka.ArcKey], err error) {
-		var zfiles []*zip.File = reader2files(r)
-		var iz ki.Iter[*zip.File] = ki.IterFromArr(zfiles)
-		var ik ki.Iter[ka.ArcKey] = ki.IterMap(iz, file2key)
+		var ik ki.Iter[ka.ArcKey] = ki.Compose(
+			reader2files,
+			ki.IterCompose(file2key),
+		)(r)
 		return ik, nil
 	}
 }
 
 type reader2keys func(*zip.Reader) ki.Iter[ka.ArcKey]
 
-func reader2files(r *zip.Reader) []*zip.File { return r.File }
+func reader2files(r *zip.Reader) ki.Iter[*zip.File] { return ki.IterFromArr(r.File) }
 
 func file2hdr(f *zip.File) zip.FileHeader     { return f.FileHeader }
 func hdr2name(h zip.FileHeader) (name string) { return h.Name }

@@ -43,3 +43,12 @@ func (i Iter[T]) Reduce(init T, reducer func(state T, item T) T) T {
 func (i Iter[T]) Map(f func(T) T) Iter[T] {
 	return IterMap(i, f)
 }
+
+func IterCompose[T, U any](f func(T) U) func(Iter[T]) Iter[U] {
+	return func(it Iter[T]) Iter[U] {
+		return func() (u U, hasValue bool) {
+			t, ok := it()
+			return OptMap(t, ok, f)
+		}
+	}
+}
