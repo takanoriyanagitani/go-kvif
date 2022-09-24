@@ -39,3 +39,13 @@ Key/Value interface with official implementations
   - 06_04_60
   - ...
   - 23_59_60
+- prefix: postgres.public.date_2022_09_23_device_cafef00ddeadbeafface864299792458
+  - bucket: 06_04.zip
+    - 06-04-00.txt
+    - 06-04-01.gz
+    - 06-04-02.gz
+    - ...
+    - 06-04-60.gz
+  - bucket: 06_05
+  - bucket: 06_06
+  - ...
