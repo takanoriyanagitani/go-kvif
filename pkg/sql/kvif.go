@@ -20,6 +20,13 @@ type SqlKv struct {
 	ck SqlKeyConverter
 }
 
+func (sk SqlKv) Get(ctx context.Context, key ki.Key) (ki.Val, error) {
+	return ki.ComposeErr(
+		sk.bk,
+		func(k SqlKey) (ki.Val, error) { return sk.get(ctx, k) },
+	)(key)
+}
+
 func (sk SqlKv) list(ctx context.Context, bucket SqlBucket) (keys ki.Iter[ki.Key], err error) {
 	return ki.ComposeErr(
 		func(b SqlBucket) (ki.Iter[SqlKey], error) { return sk.lst(ctx, b) },
