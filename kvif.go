@@ -2,18 +2,22 @@ package kvif
 
 import (
 	"context"
+	"io"
 )
 
-type Kv interface {
-	// Get tries to get val by key.
-	// If val not exists, error must be ErrNotFound
+// Getter gets Val by Key.
+// Error for non-existent key must be ErrNotFound.
+type Getter interface {
 	Get(ctx context.Context, key Key) (Val, error)
+}
 
-	// Lst tries to get keys in a bucket.
+// Lister gets keys by bucket.
+type Lister interface {
 	Lst(ctx context.Context, bucket string) (keys Iter[Key], err error)
+}
 
-	// Close closes something(optional).
-	// Caller must call close.
-	// Some implementation may use idempotent close.
-	Close() error
+type Kv interface {
+	Getter
+	Lister
+	io.Closer
 }
