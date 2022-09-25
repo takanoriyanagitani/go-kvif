@@ -58,3 +58,30 @@ func IterCompose[T, U any](f func(T) U) func(Iter[T]) Iter[U] {
 		}
 	}
 }
+
+func IterReduceErr[T, U any](i Iter[T], u1st U, f func(st U, t T) (U, error)) (u U, e error) {
+	u = u1st
+	for o, hasValue := i(); hasValue; o, hasValue = i() {
+		var t T = o
+		u, e = f(u, t)
+		if nil != e {
+			return u, e
+		}
+	}
+	return u, nil
+}
+
+func IterComposeErr[T, U any](f func(T) (U, error)) func(Iter[T]) (Iter[U], error) {
+	return ComposeErr(
+		func(it Iter[T]) ([]U, error) {
+			reducer := func(state []U, t T) (au []U, e error) {
+				return ComposeErr(
+					f,
+					func(u U) ([]U, error) { return append(au, u), nil },
+				)(t)
+			}
+			return IterReduceErr(it, nil, reducer)
+		},
+		ErrorFuncCreate(IterFromArr[U]),
+	)
+}
