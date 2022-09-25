@@ -69,7 +69,7 @@ func TestAll(t *testing.T) {
 						var isNoEnt bool = kf.IsNotFound(e)
 						t.Run("Must be noent", check(isNoEnt, true))
 
-						_, e = akv.Lst(context.Background())
+						_, e = akv.Lst(context.Background(), "archive.zip")
 						t.Run("Must not fail(lst)", check(nil == e, true))
 					})
 

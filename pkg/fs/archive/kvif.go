@@ -36,11 +36,30 @@ func (a ArcKv) ArchiveName() string { return a.bkt.ToFilename() }
 
 func (a ArcKv) convertKey(ak ArcKey) ki.Key { return ak.ToKey(a.bkt) }
 
-func (a ArcKv) Lst(ctx context.Context) (keys ki.Iter[ki.Key], err error) {
+func (a ArcKv) sameBucket(bucket string) bool {
+	return a.bkt.Equals(bucket)
+}
+
+func (a ArcKv) checkBucket(bucket string) (ArcKv, error) {
+	return ki.ErrorFromBool(
+		a.sameBucket(bucket),
+		func() (ArcKv, error) { return a, nil },
+		func() error { return fmt.Errorf("Invalid bucket: %s", bucket) },
+	)
+}
+
+func (a ArcKv) lstChecked(ctx context.Context) (keys ki.Iter[ki.Key], err error) {
 	return ki.ComposeErr(
 		func(kv ArcKv) (ki.Iter[ArcKey], error) { return kv.lst(ctx) },
 		ki.ErrorFuncCreate(ki.IterCompose(a.convertKey)),
 	)(a)
+}
+
+func (a ArcKv) Lst(ctx context.Context, unchecked string) (keys ki.Iter[ki.Key], err error) {
+	return ki.ComposeErr(
+		a.checkBucket,
+		func(kv ArcKv) (ki.Iter[ki.Key], error) { return kv.lstChecked(ctx) },
+	)(unchecked)
 }
 
 func (a ArcKv) Close() error { return a.cls() }

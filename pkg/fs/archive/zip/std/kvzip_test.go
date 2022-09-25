@@ -164,7 +164,7 @@ func TestAll(t *testing.T) {
 					t.Run("archive name", check(akv.ArchiveName(), "archive.zip"))
 
 					t.Run("Lst", func(t *testing.T) {
-						keys, e := akv.Lst(context.Background())
+						keys, e := akv.Lst(context.Background(), "archive.zip")
 						t.Run("Must not fail(get keys)", check(nil == e, true))
 
 						var ka []ki.Key = keys.ToArray()
